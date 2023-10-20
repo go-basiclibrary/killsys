@@ -23,6 +23,7 @@ type RabbitMq struct {
 	MqURL string
 }
 
+// NewRabbitMq 创建Mq实例
 func NewRabbitMq(queueName string, exchange string, key string, mqURL string) *RabbitMq {
 	rabbitMq := &RabbitMq{QueueName: queueName, Exchange: exchange, Key: key, MqURL: mqURL}
 
@@ -35,6 +36,7 @@ func NewRabbitMq(queueName string, exchange string, key string, mqURL string) *R
 	return rabbitMq
 }
 
+// Destory 销毁Mq实例
 func (mq *RabbitMq) Destory() {
 	mq.conn.Close()
 	mq.channel.Close()
