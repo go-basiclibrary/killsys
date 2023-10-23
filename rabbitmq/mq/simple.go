@@ -1,4 +1,4 @@
-package main
+package mq
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-const mqURL = "amqp://wangShao:wangShao@106.52.228.207:5672/wangShao"
+const mqURL = "amqp://wangShao:wangShao@106.52.228.207:5673/wangShao"
 
 type RabbitMq struct {
 	conn    *amqp.Connection
@@ -90,7 +90,7 @@ func (mq *RabbitMq) PublishSimple(message string) {
 }
 
 // ConsumeSimple Simple模式接收消息  消费者
-func (mq *RabbitMq) ConsumeSimple(message string) {
+func (mq *RabbitMq) ConsumeSimple() {
 	//申请队列，如果队列不存在会自动创建，如果存在则跳过创建
 	//保证队列存在，消息能发送到队列中
 	_, err := mq.channel.QueueDeclare(
@@ -105,19 +105,32 @@ func (mq *RabbitMq) ConsumeSimple(message string) {
 		fmt.Println(err)
 	}
 	// 发送消息到队列中
-	err = mq.channel.Publish(
-		mq.Exchange,  // 为""则使用default队列
-		mq.QueueName, // 队列名称
-		// 如果为true，根据exchange类型和routkey规则，如果无法找到符合条件的队列那么会把发送的消息返回给发送者
+	msgs, err := mq.channel.Consume(
+		mq.QueueName, // 为""则使用default队列
+		"",           // 用来区分多个消费者
+		// 是否自动应答,或者false时实现回调
+		true,
+		//是否具有排他性
 		false,
-		// 如果为true,当exchange发送消息到队列后发现没有绑定消费者，则会把消息返还给发送者
+		//如果设置为true，表示不能将同一个connection中发送的消息传递给这个connection中的消费者
 		false,
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(message),
-		},
+		false,
+		nil,
 	)
 	if err != nil {
-		tlog.Errorf("mq simple publish err: %s", err)
+		tlog.Errorf("mq simple consume err: %s", err)
 	}
+
+	forever := make(chan struct{})
+	// 协程处理消息
+	go func() {
+		tlog.Info("goroutine is start...")
+		for d := range msgs {
+			// 实现我们要处理的逻辑函数
+			fmt.Printf("received msg:%s\n", string(d.Body))
+		}
+	}()
+
+	// 阻塞
+	<-forever
 }
