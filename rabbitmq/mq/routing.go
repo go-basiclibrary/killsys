@@ -30,10 +30,15 @@ func (mq *RabbitMq) PublishRouting(message string) {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	queue, err := mq.channel.QueueDeclare(mq.Key, true, false, false, false, nil)
+	if err != nil {
+		tlog.Errorf("queue declare err:%v", err)
+	}
 	// 发送消息到队列中
 	err = mq.channel.Publish(
 		mq.Exchange, // 订阅模式需要指定Exchange
-		mq.Key,      // routing Key
+		queue.Name,  // routing Key
 		// 如果为true，根据exchange类型和routkey规则，如果无法找到符合条件的队列那么会把发送的消息返回给发送者
 		false,
 		// 如果为true,当exchange发送消息到队列后发现没有绑定消费者，则会把消息返还给发送者
@@ -68,20 +73,20 @@ func (mq *RabbitMq) ReceiveRouting() {
 	}
 
 	// 创建队列
-	q, err := mq.channel.QueueDeclare(
-		"", // 随机生成队列
-		false,
-		false,
-		true,
-		false, nil,
-	)
-	if err != nil {
-		fmt.Println(err)
-	}
+	//q, err := mq.channel.QueueDeclare(
+	//	mq.Key, // 随机生成队列
+	//	true,
+	//	false,
+	//	true,
+	//	false, nil,
+	//)
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
 
 	// 队列绑定exchange
 	err = mq.channel.QueueBind(
-		q.Name,
+		mq.Key,
 		mq.Key, // 需要绑定Key
 		mq.Exchange,
 		false, nil,
@@ -92,7 +97,7 @@ func (mq *RabbitMq) ReceiveRouting() {
 
 	// 发送消息到队列中
 	msgs, err := mq.channel.Consume(
-		q.Name, // 队列的名称不指定,随机生成
+		mq.Key, // 队列的名称不指定,随机生成
 		"",     // 用来区分多个消费者
 		// 是否自动应答,或者false时实现回调
 		true,
