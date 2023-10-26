@@ -9,6 +9,8 @@ import (
 // NewMysqlConn 创建mysql 连接
 func NewMysqlConn() (db *sql.DB, err error) {
 	db, err = sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/ecommerce?charset=utf8")
+	// 设置最大连接数
+	db.SetMaxOpenConns(20)
 	return
 }
 

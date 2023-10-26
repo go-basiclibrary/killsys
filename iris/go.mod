@@ -1,6 +1,6 @@
 module iris
 
-go 1.19
+go 1.17
 
 exclude (
 	github.com/kataras/iris v0.0.1
