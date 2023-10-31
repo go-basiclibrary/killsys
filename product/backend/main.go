@@ -1,8 +1,15 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"context"
 	"log"
+
+	"product/backend/web/controllers"
+	"product/repositories"
+	"product/services"
+
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/mvc"
 )
 
 func main() {
@@ -26,7 +33,14 @@ func main() {
 			log.Fatalf("iris View error.html err:%v", err)
 		}
 	})
+
 	//注册控制器
+	productRepo := repositories.NewProductManager("product")
+	productService := services.NewProductService(productRepo)
+	pParty := app.Party("/product")
+	p := mvc.New(pParty)
+	p.Register(context.Background(), productService)
+	p.Handle(new(controllers.ProductController))
 	//启动server
 	err = app.Run(
 		iris.Addr("localhost:8000"),

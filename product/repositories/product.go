@@ -5,6 +5,7 @@ import (
 	"log"
 	"product/common"
 	"product/datamodels"
+	"strconv"
 )
 
 type IProduct interface {
@@ -77,8 +78,9 @@ func (p *ProductManager) Update(product *datamodels.Product) error {
 	return err
 }
 
-func (p *ProductManager) SelectByKey(id int64) (*datamodels.Product, error) {
-	sql := "SELECT * FROM product WHERE id =?"
+func (p *ProductManager) SelectByKey(id int64) (productResult *datamodels.Product, err error) {
+	sql := "SELECT * FROM product WHERE id =" + strconv.FormatInt(id, 10)
+
 	row, err := p.sqlConn.Query(sql)
 	defer row.Close()
 	if err != nil {
@@ -86,14 +88,15 @@ func (p *ProductManager) SelectByKey(id int64) (*datamodels.Product, error) {
 	}
 	res := common.GetResultRow(row)
 	if len(res) == 0 {
-		return nil, nil
+		return &datamodels.Product{}, nil
 	}
-	//todo data to struct
+	productResult = &datamodels.Product{}
+	common.DataToStructByTagSql(res, productResult)
 
-	return nil, err
+	return
 }
 
-func (p *ProductManager) SelectAll() ([]*datamodels.Product, error) {
+func (p *ProductManager) SelectAll() (productArray []*datamodels.Product, err error) {
 	sql := "SELECT * FROM product"
 	rows, err := p.sqlConn.Query(sql)
 	defer rows.Close()
@@ -104,7 +107,11 @@ func (p *ProductManager) SelectAll() ([]*datamodels.Product, error) {
 	if len(res) == 0 {
 		return nil, nil
 	}
-	//todo data to struct
 
-	return nil, err
+	for _, v := range res {
+		product := &datamodels.Product{}
+		common.DataToStructByTagSql(v, product)
+		productArray = append(productArray, product)
+	}
+	return
 }
